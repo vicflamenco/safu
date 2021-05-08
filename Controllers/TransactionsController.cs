@@ -32,10 +32,10 @@ namespace safuCHARTS.Controllers
                 return Ok(historicData);
             }
 
-            var key = "ckey_224cdaaa12d64af5a4e9e9b3f64";
+            var key = "ckey_e45d2ad98bd24d09a8a99305fed";
             var pageSize = 1000;
             var quickSwapRouterAddress = "0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff";
-            var queryURL = $"https://api.covalenthq.com/v1/137/address/{currentPairAddress}/transactions_v2/?no-logs=false&page-size={pageSize}&key={key}";
+            var queryURL = $"https://api.covalenthq.com/v1/137/address/{currentPairAddress}/transactions_v2/?no-logs=false&page-number=0&page-size={pageSize}&key={key}";
 
             var handler = new HttpClientHandler
             {

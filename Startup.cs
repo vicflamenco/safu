@@ -29,6 +29,15 @@ namespace safuCHARTS
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseHttpsRedirection();
+
+            app.UseCors(options =>
+                options
+                    .AllowAnyOrigin() // For production, replace with -> .WithOrigins("http://example.com")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+            );
+
             app.UseRouting();
 
             app.UseAuthorization();
