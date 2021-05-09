@@ -14,11 +14,90 @@ namespace safuCHARTS.Controllers
     [Route("api/v1/[controller]")]
     public class TransactionsController : ControllerBase
     {
+        private readonly Random _random;
+
+        private readonly string[] _apiKeys =
+        {
+            "ckey_1af398529c19459493fe71b5e31",
+            "ckey_d006bf249a6748538248a94bbca",
+            "ckey_3dd5a6f4f05c409c8b20bf98e4f",
+            "ckey_e45d2ad98bd24d09a8a99305fed",
+            "ckey_224cdaaa12d64af5a4e9e9b3f64"
+        };
+
+        public TransactionsController()
+        {
+            _random = new Random();
+        }
+
+        private string GetRandomApiKey()
+        {
+            return _apiKeys[_random.Next(0, 5)];
+        }
+
         [HttpGet]
-        public async Task<ActionResult> Index(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime)
+        public async Task<ActionResult> Linear(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime)
+        {
+            var data = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime);
+            return Ok(data);
+        }
+
+        [HttpGet]
+        [Route("bars")]
+        public async Task<ActionResult> Bars(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime, int resolution = 1)
+        {
+            var result = new List<Bar>();
+
+            var data = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime);
+
+            if (!data.Any())
+            {
+                return Ok(result);
+            }
+
+            data = data.OrderBy(d => d.Time).ToList();
+
+            var initialTime = data.FirstOrDefault().Time;
+            var finalTime = data.LastOrDefault().Time;
+
+            var openTime = initialTime;
+
+            do
+            {
+                var closeTime = openTime + 60 * resolution;
+                var transactions = data.Where(t => t.Time >= openTime && t.Time < closeTime).ToList();
+
+                if (transactions.Any())
+                {
+                    var first = transactions.FirstOrDefault();
+
+                    var open = first.Value;
+                    var close = transactions.LastOrDefault().Value;
+                    var high = transactions.Max(t => t.Value);
+                    var low = transactions.Min(t => t.Value);
+
+                    result.Add(new Bar
+                    {
+                        Time = first.Time,
+                        Open = open,
+                        High = high,
+                        Low = low,
+                        Close = close,
+                        Volume = 0
+                    });
+                }
+
+                openTime = closeTime;
+            }
+            while (openTime < finalTime);
+
+            return Ok(result);
+        }
+
+        private async Task<List<HistoricDataItem>> GetHistoricalData(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime)
         {
             var historicData = new List<HistoricDataItem>();
-            
+
             var tokenAddresses = new string[]
             {
                 "0x831753dd7087cac61ab5644b308642cc1c33dc13",
@@ -29,12 +108,12 @@ namespace safuCHARTS.Controllers
 
             if (tokenAddresses.Contains(tokenAddress))
             {
-                return Ok(historicData);
+                return historicData;
             }
 
-            var key = "ckey_e45d2ad98bd24d09a8a99305fed";
             var pageSize = 1000;
             var quickSwapRouterAddress = "0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff";
+            var key = GetRandomApiKey();
             var queryURL = $"https://api.covalenthq.com/v1/137/address/{currentPairAddress}/transactions_v2/?no-logs=false&page-number=0&page-size={pageSize}&key={key}";
 
             var handler = new HttpClientHandler
@@ -47,7 +126,7 @@ namespace safuCHARTS.Controllers
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                return Ok(historicData);
+                return historicData;
             }
 
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -138,7 +217,7 @@ namespace safuCHARTS.Controllers
                 }
             }
 
-            return Ok(historicData);
+            return historicData;
         }
     }
 }
