@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using safuCHARTS.Models;
 using System;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace safuCHARTS.Controllers
@@ -32,13 +34,19 @@ namespace safuCHARTS.Controllers
 
         private string GetRandomApiKey()
         {
-            return _apiKeys[_random.Next(0, 5)];
+            return _apiKeys[_random.Next(0, _apiKeys.Length)];
         }
 
         [HttpGet]
         public async Task<ActionResult> Linear(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime)
         {
-            var data = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime);
+            var (data, error) = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime);
+
+            if (error.HasValue)
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new ErrorResponseMessage(error.Value));
+            }
+
             return Ok(data);
         }
 
@@ -47,8 +55,12 @@ namespace safuCHARTS.Controllers
         public async Task<ActionResult> Bars(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime, int resolution = 1)
         {
             var result = new List<Bar>();
+            var (data, error) = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime);
 
-            var data = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime);
+            if (error.HasValue)
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new ErrorResponseMessage(error.Value));
+            }
 
             if (!data.Any())
             {
@@ -56,10 +68,8 @@ namespace safuCHARTS.Controllers
             }
 
             data = data.OrderBy(d => d.Time).ToList();
-
             var initialTime = data.FirstOrDefault().Time;
             var finalTime = data.LastOrDefault().Time;
-
             var openTime = initialTime;
 
             do
@@ -94,7 +104,7 @@ namespace safuCHARTS.Controllers
             return Ok(result);
         }
 
-        private async Task<List<HistoricDataItem>> GetHistoricalData(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime)
+        private async Task<(List<HistoricDataItem> Data, CovalentResult? Error)> GetHistoricalData(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime)
         {
             var historicData = new List<HistoricDataItem>();
 
@@ -108,7 +118,7 @@ namespace safuCHARTS.Controllers
 
             if (tokenAddresses.Contains(tokenAddress))
             {
-                return historicData;
+                return (historicData, CovalentResult.TokenAddressInvalid);
             }
 
             var pageSize = 1000;
@@ -123,10 +133,18 @@ namespace safuCHARTS.Controllers
 
             var httpClient = new HttpClient(handler);
             var response = await httpClient.GetAsync(queryURL);
+            var remainingAttempts = 4;
+
+            while (response.StatusCode != HttpStatusCode.OK && remainingAttempts > 0)
+            {
+                Thread.Sleep(3000);
+                response = await httpClient.GetAsync(queryURL);
+                remainingAttempts--;
+            }
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                return historicData;
+                return (historicData, CovalentResult.EmptyCovalentResponse);
             }
 
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -217,7 +235,7 @@ namespace safuCHARTS.Controllers
                 }
             }
 
-            return historicData;
+            return (historicData, null);
         }
     }
 }
