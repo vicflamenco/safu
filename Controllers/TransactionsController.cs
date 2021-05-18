@@ -40,7 +40,7 @@ namespace safuCHARTS.Controllers
         [HttpGet]
         public async Task<ActionResult> Linear(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime)
         {
-            var (data, error) = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime);
+            var (data, error) = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime, 1000);
 
             if (error.HasValue)
             {
@@ -55,7 +55,9 @@ namespace safuCHARTS.Controllers
         public async Task<ActionResult> Bars(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime, int resolution = 1)
         {
             var result = new List<Bar>();
-            var (data, error) = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime);
+            var pageSize = resolution < 15 ? 1000 : resolution < 30 ? 1500 : 2500;
+
+            var (data, error) = await GetHistoricalData(tokenAddress, currentPairAddress, currentTokenDecimals, fromTime, toTime, pageSize);
 
             if (error.HasValue)
             {
@@ -104,7 +106,7 @@ namespace safuCHARTS.Controllers
             return Ok(result);
         }
 
-        private async Task<(List<HistoricDataItem> Data, CovalentResult? Error)> GetHistoricalData(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime)
+        private async Task<(List<HistoricDataItem> Data, CovalentResult? Error)> GetHistoricalData(string tokenAddress, string currentPairAddress, int currentTokenDecimals, DateTime? fromTime, DateTime? toTime, int pageSize)
         {
             var historicData = new List<HistoricDataItem>();
 
@@ -121,7 +123,6 @@ namespace safuCHARTS.Controllers
                 return (historicData, CovalentResult.TokenAddressInvalid);
             }
 
-            var pageSize = 1000;
             var quickSwapRouterAddress = "0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff";
             var key = GetRandomApiKey();
             var queryURL = $"https://api.covalenthq.com/v1/137/address/{currentPairAddress}/transactions_v2/?no-logs=false&page-number=0&page-size={pageSize}&key={key}";
