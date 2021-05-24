@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using safuCHARTS.Services;
+using StackExchange.Redis;
 
 namespace safuCHARTS
 {
@@ -19,6 +21,10 @@ namespace safuCHARTS
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+            services.AddSingleton<IConnectionMultiplexer>(x =>
+                ConnectionMultiplexer.Connect(Configuration.GetValue<string>("RedisConnection")));
+            services.AddSingleton<IRedisService, RedisService>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
