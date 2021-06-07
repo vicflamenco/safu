@@ -18,7 +18,7 @@ namespace safuCHARTS.Models
         public string QuoteCurrency { get; set; }
 
         [JsonPropertyName("chain_id")]
-        public int ChainID { get; set; }
+        public int? ChainID { get; set; }
 
         [JsonPropertyName("items")]
         public List<TransactionDataContentItem> Items { get; set; }

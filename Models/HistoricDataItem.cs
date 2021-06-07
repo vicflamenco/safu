@@ -5,9 +5,9 @@ namespace safuCHARTS.Models
     public class HistoricDataItem
     {
         [JsonPropertyName("time")]
-        public long Time { get; set; }
+        public long? Time { get; set; }
 
         [JsonPropertyName("value")]
-        public double Value { get; set; }
+        public double? Value { get; set; }
     }
 }

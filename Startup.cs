@@ -20,7 +20,10 @@ namespace safuCHARTS
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddMemoryCache();
+            services.AddMemoryCache(options =>
+            {
+                
+            });
             services.AddSingleton<ICacheService, CacheService>();
         }
 

@@ -64,8 +64,12 @@ namespace safuCHARTS.Controllers
 
             var price = jsonResponse.Data?.Items.FirstOrDefault()?.QuoteRate;
             
-            result.QuoteRate = price;
-            SaveValue(price.Value);
+            if (price.HasValue)
+            {
+                SaveValue(price.Value);
+                result.QuoteRate = price;
+            }
+
             return Ok(result);
         }
     }

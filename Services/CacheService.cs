@@ -11,7 +11,6 @@ namespace safuCHARTS.Services
     public class CacheService : ICacheService
     {
         private readonly IMemoryCache _memoryCache;
-        private readonly TimeSpan _expiryTime;
         private readonly Random _random;
         private readonly string _tokenNamesPrefix = "token";
         private readonly string _tokenHitsPrefix = "hits";
@@ -19,7 +18,6 @@ namespace safuCHARTS.Services
         public CacheService(IMemoryCache memoryCache)
         {
             _memoryCache = memoryCache;
-            _expiryTime = TimeSpan.FromDays(1);
             _random = new Random();
         }
 
@@ -43,18 +41,19 @@ namespace safuCHARTS.Services
 
         private void Set(string key, string value)
         {
-            _memoryCache.Set(key, value, _expiryTime);
+            var expiryTime = DateTimeOffset.Now.AddDays(1);
+            _memoryCache.Set(key, value, expiryTime);
         }
 
         public void SetTokenName(string tokenAddress, string tokenName)
         {
-            var key = $"{_tokenNamesPrefix}_{tokenAddress}";
+            var key = $"{_tokenNamesPrefix}_{tokenAddress.ToLower()}";
             Set(key, tokenName);
         }
 
         public void AddHit(string tokenAddress)
         {
-            var key = $"{_tokenHitsPrefix}_{tokenAddress}_{DateTime.UtcNow.ToFileTime()}{_random.Next(100, 1000)}";
+            var key = $"{_tokenHitsPrefix}_{tokenAddress.ToLower()}_{DateTime.UtcNow.ToFileTime()}{_random.Next(100, 1000)}";
             Set(key, "1");
         }
 
@@ -86,9 +85,9 @@ namespace safuCHARTS.Services
         public List<Token> GetTop10()
         {
             var allKeys = GetAllKeys();
-            var tokenNameKeys = allKeys.Where(t => t.StartsWith(_tokenHitsPrefix)).ToList();
+            var tokenHitsKeys = allKeys.Where(t => t.StartsWith(_tokenHitsPrefix)).ToList();
 
-            var top10 = tokenNameKeys
+            var top10 = tokenHitsKeys
                 .Select(k => k.ToString().Split("_")[1])
                 .GroupBy(k => k)
                 .Select(g => new Token

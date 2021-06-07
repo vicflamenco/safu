@@ -12,7 +12,7 @@ namespace safuCHARTS.Models
         public string TxHash { get; set; }
 
         [JsonPropertyName("tx_offset")]
-        public int TxOffset { get; set; }
+        public int? TxOffset { get; set; }
 
         [JsonPropertyName("successful")]
         public bool Successful { get; set; }
@@ -33,22 +33,22 @@ namespace safuCHARTS.Models
         public string Value { get; set; }
 
         [JsonPropertyName("value_quote")]
-        public double ValueQuote { get; set; }
+        public double? ValueQuote { get; set; }
 
         [JsonPropertyName("gas_offered")]
-        public double GasOffered { get; set; }
+        public double? GasOffered { get; set; }
 
         [JsonPropertyName("gas_spent")]
-        public double GasSpent { get; set; }
+        public double? GasSpent { get; set; }
 
         [JsonPropertyName("gas_price")]
-        public double GasPrice { get; set; }
+        public double? GasPrice { get; set; }
 
         [JsonPropertyName("gas_quote")]
-        public double GasQuote { get; set; }
+        public double? GasQuote { get; set; }
 
         [JsonPropertyName("gas_quote_rate")]
-        public double GasQuoteRate { get; set; }
+        public double? GasQuoteRate { get; set; }
 
         [JsonPropertyName("log_events")]
         public List<LogEvent> LogEvents { get; set; }
