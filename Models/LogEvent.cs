@@ -8,13 +8,13 @@ namespace safuCHARTS.Models
         public string BlockSignedAt { get; set; }
 
         [JsonPropertyName("block_height")]
-        public double BlockHeight { get; set; }
+        public double? BlockHeight { get; set; }
 
         [JsonPropertyName("tx_offset")]
-        public int TxOffset { get; set; }
+        public int? TxOffset { get; set; }
 
         [JsonPropertyName("log_offset")]
-        public int LogOffset { get; set; }
+        public int? LogOffset { get; set; }
 
         [JsonPropertyName("tx_hash")]
         public string TxHash { get; set; }
